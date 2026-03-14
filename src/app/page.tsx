@@ -1,9 +1,17 @@
 'use client';
 import { useState } from 'react';
 
+// ✅ ИНТЕРФЕЙС для TypeScript
+interface AnalysisResult {
+  score: number;
+  severity: string;
+  evaluation: string;
+  presentMarkers?: string[];
+}
+
 export default function Home() {
   const [text, setText] = useState('I feel very sad and tired all the time. Nothing brings me joy anymore. I just want to sleep.');
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,31 +27,23 @@ export default function Home() {
     setLoading(true);
     
     try {
-      console.log('🚀 Отправляю текст длиной:', text.length);
-      
       const response = await fetch('/api/analyze', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
 
-      console.log('📡 Статус ответа:', response.status);
-
       const data = await response.json();
-      console.log('✅ Получил данные:', data);
 
       if (response.status !== 200) {
         setError(data.error || 'API Error');
         return;
       }
 
-      setResult(data);
+      setResult(data as AnalysisResult);
       
     } catch (err) {
       console.error('❌ Ошибка:', err);
-      // ✅ TypeScript FIX: проверяем тип ошибки
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError('Network error: ' + message);
     } finally {
@@ -185,17 +185,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        <div style={{ 
-          textAlign: 'center', 
-          marginTop: 32, 
-          padding: 16, 
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: 12,
-          fontSize: 14
-        }}>
-          F12 → Console для детальной отладки
-        </div>
       </div>
     </div>
   );
