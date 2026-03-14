@@ -1,103 +1,98 @@
+'use client';  // ← ЭТО ГЛАВНОЕ!
+
 export default function Home() {
+  const handleClick = () => {
+    alert('✅ КНОПКА РАБОТАЕТ!');
+    console.log('Button clicked!');
+  };
+
   return (
-    <main style={{ 
-      minHeight: '100vh', 
+    <main style={{
+      minHeight: '100vh',
+      padding: '2rem',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '4rem 2rem',
-      fontFamily: 'system-ui, sans-serif'
+      color: 'white',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      <div style={{ 
-        maxWidth: '800px', 
-        margin: '0 auto', 
-        textAlign: 'center',
-        background: 'rgba(255,255,255,0.95)',
-        padding: '3rem',
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        padding: '3rem 2rem',
+        background: 'rgba(255,255,255,0.1)',
+        backdropFilter: 'blur(20px)',
         borderRadius: '24px',
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+        border: '1px solid rgba(255,255,255,0.2)',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
       }}>
-        <h1 style={{ 
-          fontSize: '4rem', 
-          fontWeight: '900', 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          marginBottom: '2rem'
+        <h1 style={{
+          fontSize: '3rem',
+          fontWeight: '900',
+          textAlign: 'center',
+          marginBottom: '2rem',
+          textShadow: '0 4px 12px rgba(0,0,0,0.3)'
         }}>
           Lang4Diagnosis
         </h1>
         
-        <div style={{ 
-          fontSize: '1.5rem', 
-          color: '#1f2937', 
-          marginBottom: '3rem',
-          fontWeight: '600'
-        }}>
-          ✅ DEPLOYMENT SUCCESSFUL
-        </div>
+        <textarea
+          style={{
+            width: '100%',
+            height: '160px',
+            padding: '1.5rem',
+            border: '2px solid rgba(255,255,255,0.3)',
+            borderRadius: '16px',
+            fontSize: '16px',
+            background: 'rgba(255,255,255,0.9)',
+            color: '#1f2937',
+            resize: 'vertical',
+            fontFamily: 'monospace'
+          }}
+          placeholder="Paste English text here (50+ characters)..."
+          onChange={(e) => console.log('Typing:', e.target.value.length)}
+        />
         
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '2rem',
-          marginBottom: '3rem'
-        }}>
-          <div style={{ 
-            padding: '2rem', 
-            background: 'rgba(34,197,94,0.1)', 
-            border: '2px solid rgba(34,197,94,0.3)',
-            borderRadius: '16px'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#166534', marginBottom: '1rem' }}>
-              ✓ Статус
-            </h3>
-            <ul style={{ textAlign: 'left', color: '#166534', lineHeight: '1.6' }}>
-              <li>Next.js 15.3.6 ✓</li>
-              <li>React 18.3.1 ✓</li>
-              <li>Tailwind CSS ✓</li>
-              <li>TypeScript ✓</li>
-            </ul>
-          </div>
-          
-          <div style={{ 
-            padding: '2rem', 
-            background: 'rgba(59,130,246,0.1)', 
-            border: '2px solid rgba(59,130,246,0.3)',
-            borderRadius: '16px'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1e40af', marginBottom: '1rem' }}>
-              → Скоро
-            </h3>
-            <ul style={{ textAlign: 'left', color: '#1e40af', lineHeight: '1.6' }}>
-              <li>• Анализ текста</li>
-              <li>• Маркеры депрессии</li>
-              <li>• Оценка риска</li>
-              <li>• Экспорт PDF/CSV</li>
-            </ul>
-          </div>
-        </div>
-        
-        <button style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '1rem 3rem',
-          border: 'none',
-          borderRadius: '16px',
-          fontSize: '1.25rem',
-          fontWeight: '700',
-          cursor: 'pointer',
-          boxShadow: '0 10px 25px rgba(102,126,234,0.4)'
-        }}>
-          Анализировать текст →
+        <button
+          onClick={handleClick}
+          style={{
+            width: '100%',
+            marginTop: '1.5rem',
+            padding: '1.2rem',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '2px solid rgba(255,255,255,0.3)',
+            borderRadius: '16px',
+            fontSize: '18px',
+            fontWeight: '700',
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          🔬 Analyze Text
         </button>
         
-        <p style={{ 
-          marginTop: '3rem', 
-          color: '#6b7280', 
-          fontSize: '1.1rem'
+        <div style={{
+          textAlign: 'center',
+          marginTop: '1.5rem',
+          padding: '1rem',
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '12px',
+          fontSize: '14px'
         }}>
-          Научный анализ лингвистических маркеров депрессии для психологов
-        </p>
+          <strong>📋 Инструкция:</strong><br/>
+          1. F12 → Console<br/>
+          2. Нажми кнопку → увидишь alert + лог<br/>
+          3. Кнопка работает! ✅
+        </div>
       </div>
     </main>
-  )
+  );
 }
