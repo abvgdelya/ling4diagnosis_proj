@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     
     const result = await sentimentAnalyzer(text.slice(0, 512));
     
-    // ✅ TYPE ASSERTION - ИСПРАВЛЕНИЕ TypeScript
+    // ✅ TYPE SAFE DistilBERT result
     const sentimentResult = Array.isArray(result) ? result[0] : result;
     const typedResult = sentimentResult as { label: string; score: number };
     
@@ -72,9 +72,10 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('DistilBERT error:', error);
     
-    // ✅ FALLBACK: Lexicon analysis
+    // ✅ FIXED: Передаём text в catch scope
+    const { text } = await req.json();
     const words: string[] = text.toLowerCase().split(/\W+/).filter(Boolean);
-    const negativeWords = words.filter(w => 
+    const negativeWords = words.filter((w: string) => 
       ['sad','depressed','anxious','hopeless','tired'].includes(w)
     );
     const fallbackScore = Math.min(85, negativeWords.length * 15);
