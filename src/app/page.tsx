@@ -8,11 +8,9 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const analyze = async () => {
-    // Очистка предыдущих результатов
     setResult(null);
     setError('');
     
-    // Проверка длины текста
     if (text.length < 50) {
       setError('❌ Текст слишком короткий! Нужно 50+ символов');
       return;
@@ -36,7 +34,6 @@ export default function Home() {
       const data = await response.json();
       console.log('✅ Получил данные:', data);
 
-      // Если API вернул ошибку
       if (response.status !== 200) {
         setError(data.error || 'API Error');
         return;
@@ -46,7 +43,9 @@ export default function Home() {
       
     } catch (err) {
       console.error('❌ Ошибка:', err);
-      setError('Network error: ' + err.message);
+      // ✅ TypeScript FIX: проверяем тип ошибки
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError('Network error: ' + message);
     } finally {
       setLoading(false);
     }
@@ -73,10 +72,7 @@ export default function Home() {
           fontSize: '3.5rem', 
           fontWeight: 900, 
           textAlign: 'center', 
-          marginBottom: 32,
-          background: 'linear-gradient(45deg, white, #e0e7ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
+          marginBottom: 32
         }}>
           🧠 Lang4Diagnosis
         </h1>
@@ -96,8 +92,7 @@ export default function Home() {
               background: 'rgba(255,255,255,0.95)',
               color: '#1f2937',
               resize: 'vertical',
-              fontFamily: 'monospace',
-              lineHeight: 1.5
+              fontFamily: 'monospace'
             }}
           />
           <div style={{ 
@@ -120,8 +115,7 @@ export default function Home() {
                 borderRadius: 16,
                 fontSize: 16,
                 fontWeight: 700,
-                cursor: loading || text.length < 50 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s'
+                cursor: loading || text.length < 50 ? 'not-allowed' : 'pointer'
               }}
             >
               {loading ? '🔄 Analyzing...' : '🔬 Analyze'}
@@ -129,7 +123,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ОШИБКИ */}
         {error && (
           <div style={{ 
             padding: 16, 
@@ -143,7 +136,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* РЕЗУЛЬТАТ */}
         {result && (
           <div style={{ 
             padding: 32, 
@@ -190,10 +182,6 @@ export default function Home() {
                   {result.evaluation}
                 </div>
               </div>
-            </div>
-
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-              <strong>Debug info:</strong> {JSON.stringify(result, null, 2)}
             </div>
           </div>
         )}
