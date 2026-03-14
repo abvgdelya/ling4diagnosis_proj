@@ -1,4 +1,6 @@
-'use client';  // ← ЭТО ГЛАВНОЕ!
+'use client';  // ← ДОБАВИТЬ НА 1-Ю СТРОКУ!
+import { useState } from 'react';
+
 
 export default function Home() {
   const handleClick = () => {
