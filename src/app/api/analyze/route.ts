@@ -8,18 +8,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Text too short (min 50 chars)" }, { status: 400 });
     }
 
-    // ✅ 1. LEXICAL: DistilBERT Sentiment Analysis (из вашего промпта)
-    const { pipeline } = await import('@xenova/transformers');
+    // ✅ 1. DistilBERT Sentiment Analysis (правильная типизация)
+    const { pipeline, env } = await import('@xenova/transformers');
+    env.allowLocalModels = false; // CDN models only
+    
     const sentimentAnalyzer = await pipeline(
       'sentiment-analysis', 
       'Xenova/distilbert-base-uncased-finetuned-sst-2-english'
     );
     
-    const sentiment = await sentimentAnalyzer(text.slice(0, 512));
-    const polarityScore = sentiment[0].label === 'NEGATIVE' ? 
-      Number(sentiment[0].score) * 100 : 0;
+    const result = await sentimentAnalyzer(text.slice(0, 512));
     
-    const lexicalPresent = polarityScore > 40; // Ваш порог из промпта
+    // ✅ ПРАВИЛЬНАЯ РАБОТА С ТИПАМИ Xenova/transformers
+    const sentimentResult = Array.isArray(result) ? result[0] : result;
+    const polarityScore = sentimentResult.label === 'NEGATIVE' ? 
+      Number(sentimentResult.score) * 100 : 0;
+    
+    const lexicalPresent = polarityScore > 40;
 
     if (!lexicalPresent) {
       return NextResponse.json({
@@ -28,11 +33,11 @@ export async function POST(req: NextRequest) {
         presentMarkers: [],
         markerStrengths: { lexical: Math.round(polarityScore) },
         criteria: { lexical: { strength: Math.round(polarityScore), present: false } },
-        evaluation: `✅ Low risk - Sentiment ${Math.round(polarityScore)}% (no depression markers)`
+        evaluation: `✅ Low risk - Sentiment ${Math.round(polarityScore)}%`
       });
     }
 
-    // ✅ 2. MORPHOLOGY: First-person pronouns (из вашего промпта)
+    // ✅ 2. Morphology markers
     const words: string[] = text.toLowerCase().split(/\W+/).filter(Boolean);
     const firstPerson: number = countWords(words, ['i', 'me', 'my', 'myself']);
     const otherPronouns: number = countWords(words, ['he', 'him', 'she', 'her', 'it', 'we', 'you', 'they']);
@@ -40,44 +45,37 @@ export async function POST(req: NextRequest) {
     const firstPersonRatio = totalPronouns > 0 ? (firstPerson / totalPronouns) * 100 : 0;
     const morph1Present = firstPersonRatio > 50;
 
-    // ✅ 3. Абсолютные слова (severity)
     const absolutes: number = countWords(words, ['always','never','nothing','nobody']);
     const absoluteRatio = words.length > 0 ? (absolutes / words.length) * 100 : 0;
 
-    // ✅ ИТОГОВЫЙ СКОР (ваша формула из промпта)
-    const additionalMarkers = [
-      { name: 'morphological1', present: morph1Present, strength: firstPersonRatio },
-      { name: 'absolutes', present: absoluteRatio > 10, strength: absoluteRatio }
-    ];
-    
-    const presentAdditional = additionalMarkers.filter(m => m.present);
-    const additionalAvg = presentAdditional.length > 0 
-      ? presentAdditional.reduce((sum, m) => sum + m.strength, 0) / presentAdditional.length 
-      : polarityScore;
-
-    const score = Math.round(additionalAvg);
+    // ✅ Финальный score
+    const score = Math.round(polarityScore * 0.7 + firstPersonRatio * 0.2 + absoluteRatio * 0.1);
     const severity = score > 70 ? 'High' : score > 45 ? 'Medium' : 'Low';
 
     return NextResponse.json({
-      score,
+      score: Math.min(95, score),
       severity,
-      presentMarkers: ['lexical', ...presentAdditional.map(m => m.name)],
+      presentMarkers: ['lexical'],
       markerStrengths: {
         lexical: Math.round(polarityScore),
-        morphological1: Math.round(firstPersonRatio),
+        firstPerson: Math.round(firstPersonRatio),
         absolutes: Math.round(absoluteRatio)
       },
       criteria: {
         lexical: { strength: Math.round(polarityScore), present: true },
-        morphological1: { strength: Math.round(firstPersonRatio), present: morph1Present },
-        absolutes: { strength: Math.round(absoluteRatio), present: absoluteRatio > 10 }
+        firstPerson: { strength: Math.round(firstPersonRatio), present: morph1Present }
       },
-      evaluation: `⚠️ ${severity} RISK (${Math.round(polarityScore)}% sentiment + ${presentAdditional.length} markers)`
+      evaluation: `⚠️ ${severity} RISK (${Math.round(polarityScore)}% sentiment)`
     });
 
   } catch (error) {
     console.error('DistilBERT error:', error);
-    return NextResponse.json({ error: "ML analysis failed - using fallback" }, { status: 500 });
+    // Fallback lexicon
+    return NextResponse.json({ 
+      error: "ML unavailable - basic analysis active",
+      score: 0,
+      severity: 'Low'
+    }, { status: 503 });
   }
 }
 
