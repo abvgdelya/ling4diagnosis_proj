@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Text too short (min 50 chars)" }, { status: 400 });
     }
 
-    // ✅ 1. DistilBERT Sentiment Analysis (правильная типизация)
+    // ✅ DistilBERT Sentiment Analysis
     const { pipeline, env } = await import('@xenova/transformers');
-    env.allowLocalModels = false; // CDN models only
+    env.allowLocalModels = false;
     
     const sentimentAnalyzer = await pipeline(
       'sentiment-analysis', 
@@ -19,10 +19,12 @@ export async function POST(req: NextRequest) {
     
     const result = await sentimentAnalyzer(text.slice(0, 512));
     
-    // ✅ ПРАВИЛЬНАЯ РАБОТА С ТИПАМИ Xenova/transformers
+    // ✅ TYPE ASSERTION - ИСПРАВЛЕНИЕ TypeScript
     const sentimentResult = Array.isArray(result) ? result[0] : result;
-    const polarityScore = sentimentResult.label === 'NEGATIVE' ? 
-      Number(sentimentResult.score) * 100 : 0;
+    const typedResult = sentimentResult as { label: string; score: number };
+    
+    const polarityScore = typedResult.label === 'NEGATIVE' ? 
+      Number(typedResult.score) * 100 : 0;
     
     const lexicalPresent = polarityScore > 40;
 
@@ -37,18 +39,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ✅ 2. Morphology markers
+    // ✅ Morphology markers
     const words: string[] = text.toLowerCase().split(/\W+/).filter(Boolean);
     const firstPerson: number = countWords(words, ['i', 'me', 'my', 'myself']);
     const otherPronouns: number = countWords(words, ['he', 'him', 'she', 'her', 'it', 'we', 'you', 'they']);
     const totalPronouns = firstPerson + otherPronouns;
     const firstPersonRatio = totalPronouns > 0 ? (firstPerson / totalPronouns) * 100 : 0;
-    const morph1Present = firstPersonRatio > 50;
 
     const absolutes: number = countWords(words, ['always','never','nothing','nobody']);
     const absoluteRatio = words.length > 0 ? (absolutes / words.length) * 100 : 0;
 
-    // ✅ Финальный score
+    // ✅ Final score
     const score = Math.round(polarityScore * 0.7 + firstPersonRatio * 0.2 + absoluteRatio * 0.1);
     const severity = score > 70 ? 'High' : score > 45 ? 'Medium' : 'Low';
 
@@ -63,19 +64,27 @@ export async function POST(req: NextRequest) {
       },
       criteria: {
         lexical: { strength: Math.round(polarityScore), present: true },
-        firstPerson: { strength: Math.round(firstPersonRatio), present: morph1Present }
+        firstPerson: { strength: Math.round(firstPersonRatio), present: firstPersonRatio > 50 }
       },
       evaluation: `⚠️ ${severity} RISK (${Math.round(polarityScore)}% sentiment)`
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('DistilBERT error:', error);
-    // Fallback lexicon
-    return NextResponse.json({ 
-      error: "ML unavailable - basic analysis active",
-      score: 0,
-      severity: 'Low'
-    }, { status: 503 });
+    
+    // ✅ FALLBACK: Lexicon analysis
+    const words: string[] = text.toLowerCase().split(/\W+/).filter(Boolean);
+    const negativeWords = words.filter(w => 
+      ['sad','depressed','anxious','hopeless','tired'].includes(w)
+    );
+    const fallbackScore = Math.min(85, negativeWords.length * 15);
+    
+    return NextResponse.json({
+      score: fallbackScore,
+      severity: fallbackScore > 60 ? 'High' : fallbackScore > 30 ? 'Medium' : 'Low',
+      presentMarkers: negativeWords.length > 0 ? ['lexical'] : [],
+      evaluation: `ℹ️ ML unavailable - Basic analysis: ${fallbackScore}%`
+    });
   }
 }
 
