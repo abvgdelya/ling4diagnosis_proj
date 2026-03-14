@@ -1,94 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-interface AnalysisResult {
-  score: number;
-  severity: string;
-  presentMarkers: string[];
-  evaluation: string;
-  lexicalPresent: boolean;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { text } = await req.json();
-
-    if (!text?.trim() || text.length < 50) {
+    
+    if (text.length < 50) {
       return NextResponse.json({ error: "Text too short (min 50 chars)" }, { status: 400 });
     }
+
+    // ✅ 1. LEXICAL: DistilBERT Sentiment Analysis (из вашего промпта)
+    const { pipeline } = await import('@xenova/transformers');
+    const sentimentAnalyzer = await pipeline(
+      'sentiment-analysis', 
+      'Xenova/distilbert-base-uncased-finetuned-sst-2-english'
+    );
     
-    const words: string[] = text.toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(/\s+/)
-      .filter((w: string) => w.length > 2); // ✅ TypeScript FIX
+    const sentiment = await sentimentAnalyzer(text.slice(0, 512));
+    const polarityScore = sentiment[0].label === 'NEGATIVE' ? 
+      Number(sentiment[0].score) * 100 : 0;
     
-    const wordCount = words.length;
-
-    // ✅ ЛЕКСИЧЕСКИЕ МАРКЕРЫ ДЕПРЕССИИ (ГЛАВНЫЙ ФИЛЬТР)
-    const lexicalMarkers: string[] = [
-      'sad','depressed','depression','anxious','anxiety','hopeless','tired','exhausted',
-      'alone','lonely','empty','numb','worthless','guilty','ashamed','failure','broken',
-      'dead','die','death','suicide','overwhelmed','trapped','stuck','drowning','despair'
-    ];
-
-    // ✅ ДОПОЛНИТЕЛЬНЫЕ МАРКЕРЫ ДЛЯ SEVERITY
-    const morphologyMarkers: string[] = ['always','never','nothing','nobody','everyone','no one'];
-    const semanticsMarkers: string[] = ['dark','black','grey','heavy','weight','burden','pain','hurt'];
-
-    // 1. ПРОВЕРКА ЛЕКСИЧЕСКИХ МАРКЕРОВ (ОБЯЗАТЕЛЬНО!)
-    const lexicalMatches: string[] = words.filter(w => lexicalMarkers.includes(w));
-    const lexicalPresent = lexicalMatches.length > 0;
-    const lexicalScore = lexicalPresent ? Math.round((lexicalMatches.length / wordCount) * 100) : 0;
+    const lexicalPresent = polarityScore > 40; // Ваш порог из промпта
 
     if (!lexicalPresent) {
       return NextResponse.json({
-        score: 5,
+        score: 0,
         severity: 'Low',
         presentMarkers: [],
-        evaluation: '✅ No lexical depression markers detected',
-        lexicalPresent: false
+        markerStrengths: { lexical: Math.round(polarityScore) },
+        criteria: { lexical: { strength: Math.round(polarityScore), present: false } },
+        evaluation: `✅ Low risk - Sentiment ${Math.round(polarityScore)}% (no depression markers)`
       });
     }
 
-    // 2. SEVERITY анализ (только если лексика есть)
-    const morphMatches: string[] = words.filter(w => morphologyMarkers.includes(w));
-    const morphScore = Math.round((morphMatches.length / wordCount) * 100);
+    // ✅ 2. MORPHOLOGY: First-person pronouns (из вашего промпта)
+    const words: string[] = text.toLowerCase().split(/\W+/).filter(Boolean);
+    const firstPerson: number = countWords(words, ['i', 'me', 'my', 'myself']);
+    const otherPronouns: number = countWords(words, ['he', 'him', 'she', 'her', 'it', 'we', 'you', 'they']);
+    const totalPronouns = firstPerson + otherPronouns;
+    const firstPersonRatio = totalPronouns > 0 ? (firstPerson / totalPronouns) * 100 : 0;
+    const morph1Present = firstPersonRatio > 50;
 
-    const semMatches: string[] = words.filter(w => semanticsMarkers.includes(w));
-    const semScore = Math.round((semMatches.length / wordCount) * 100);
+    // ✅ 3. Абсолютные слова (severity)
+    const absolutes: number = countWords(words, ['always','never','nothing','nobody']);
+    const absoluteRatio = words.length > 0 ? (absolutes / words.length) * 100 : 0;
 
-    const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 10);
-    const avgSentenceLength = sentences.length > 0 
-      ? sentences.reduce((sum: number, s: string) => sum + s.split(' ').length, 0) / sentences.length 
-      : 20;
-    const syntaxScore = avgSentenceLength < 12 ? 25 : 0;
-
-    // ✅ ИТОГОВЫЙ SCORE
-    const baseScore = 30 + (lexicalScore * 1.5);
-    const severityScore = morphScore * 0.8 + semScore * 0.7 + syntaxScore;
-    const totalScore = Math.min(95, Math.round(baseScore + severityScore));
-
-    const severity = totalScore < 50 ? 'Low' : totalScore < 75 ? 'Medium' : 'High';
-    const presentMarkers: string[] = ['lexical'];
+    // ✅ ИТОГОВЫЙ СКОР (ваша формула из промпта)
+    const additionalMarkers = [
+      { name: 'morphological1', present: morph1Present, strength: firstPersonRatio },
+      { name: 'absolutes', present: absoluteRatio > 10, strength: absoluteRatio }
+    ];
     
-    if (morphScore > 15) presentMarkers.push('morphology');
-    if (semScore > 10) presentMarkers.push('semantics');
-    if (syntaxScore > 0) presentMarkers.push('syntax');
+    const presentAdditional = additionalMarkers.filter(m => m.present);
+    const additionalAvg = presentAdditional.length > 0 
+      ? presentAdditional.reduce((sum, m) => sum + m.strength, 0) / presentAdditional.length 
+      : polarityScore;
 
-    const result: AnalysisResult = {
-      score: totalScore,
+    const score = Math.round(additionalAvg);
+    const severity = score > 70 ? 'High' : score > 45 ? 'Medium' : 'Low';
+
+    return NextResponse.json({
+      score,
       severity,
-      presentMarkers,
-      evaluation: totalScore < 50 
-        ? '⚠️ Mild symptoms (lexical markers present)' 
-        : totalScore < 75 
-        ? '🚨 Moderate depression risk - professional evaluation recommended' 
-        : '🚨🚨 High risk - urgent professional help needed',
-      lexicalPresent: true
-    };
+      presentMarkers: ['lexical', ...presentAdditional.map(m => m.name)],
+      markerStrengths: {
+        lexical: Math.round(polarityScore),
+        morphological1: Math.round(firstPersonRatio),
+        absolutes: Math.round(absoluteRatio)
+      },
+      criteria: {
+        lexical: { strength: Math.round(polarityScore), present: true },
+        morphological1: { strength: Math.round(firstPersonRatio), present: morph1Present },
+        absolutes: { strength: Math.round(absoluteRatio), present: absoluteRatio > 10 }
+      },
+      evaluation: `⚠️ ${severity} RISK (${Math.round(polarityScore)}% sentiment + ${presentAdditional.length} markers)`
+    });
 
-    return NextResponse.json(result);
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    console.error('DistilBERT error:', error);
+    return NextResponse.json({ error: "ML analysis failed - using fallback" }, { status: 500 });
   }
+}
+
+function countWords(words: string[], targets: string[]): number {
+  return words.filter((w: string) => targets.some((t: string) => w.includes(t))).length;
 }
