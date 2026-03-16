@@ -1,9 +1,14 @@
 "use client";
 import { useState } from "react";
 
+interface AnalysisResult {
+  textWithMarkers?: string;
+  [key: string]: any; // For other properties returned by your API
+}
+
 export default function HomePage() {
   const [text, setText] = useState("");
-  const [result, setResult] = useState({});
+  const [result, setResult] = useState<AnalysisResult | null>(null); // Changed to null initially
   const [loading, setLoading] = useState(false);
 
   const analyze = async () => {
