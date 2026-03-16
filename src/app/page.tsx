@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 
 interface FoundMarker {
   word: string;
@@ -25,8 +25,7 @@ export default function HomePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const MIN_CHARS = 50;
+  const MIN_CHARS = 20;
   const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
@@ -68,11 +67,6 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Simple HTML parser for marker display
-  const renderTextWithMarkers = (htmlString: string) => {
-    return <div className="text-highlight-container" dangerouslySetInnerHTML={{ __html: htmlString }} />;
   };
 
   return (
@@ -167,7 +161,7 @@ export default function HomePage() {
                 </h3>
                 
                 {/* Marker Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(result.markerStrengths).map(([marker, strength]: [string, number]) => {
                     const strengthPercent = Math.round(strength);
                     const markerInfo = {
@@ -201,7 +195,8 @@ export default function HomePage() {
                     );
                   })}
                 </div>
-
+              </div>
+            )}
 
             {/* Depressivity Rate */}
             {result.depressivityPercent !== undefined && (
@@ -246,83 +241,7 @@ export default function HomePage() {
         
         * { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
-        
-        /* Text container scrollbar */
-        .text-highlight-container::-webkit-scrollbar {
-          width: 8px;
-        }
-        .text-highlight-container::-webkit-scrollbar-track {
-          background: rgba(15, 23, 42, 0.3);
-          border-radius: 4px;
-        }
-        .text-highlight-container::-webkit-scrollbar-thumb {
-          background: rgba(251, 191, 36, 0.6);
-          border-radius: 4px;
-        }
-        .text-highlight-container::-webkit-scrollbar-thumb:hover {
-          background: rgba(251, 191, 36, 0.8);
-        }
-        
-        /* MARKER STYLES - Only show when actually present */
-        .marker {
-          display: inline-block !important;
-          color: white !important;
-          padding: 2px 6px !important;
-          margin: 0 1px !important;
-          border-radius: 6px !important;
-          font-weight: 600 !important;
-          font-size: 0.75rem !important;
-          line-height: 1.3 !important;
-          vertical-align: middle !important;
-          position: relative !important;
-          z-index: 20 !important;
-          border: 1px solid rgba(255,255,255,0.3) !important;
-          font-family: inherit !important;
-          animation: markerPulse 1.5s ease-in-out infinite !important;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
-        }
-        
-        .marker-lexical { 
-          background: linear-gradient(135deg, #ef4444, #f87171) !important;
-          box-shadow: 0 2px 8px rgba(239,68,68,0.4) !important;
-        }
-        .marker-morphological1 { 
-          background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
-          box-shadow: 0 2px 8px rgba(245,158,11,0.4) !important;
-        }
-        .marker-morphological2 { 
-          background: linear-gradient(135deg, #10b981, #34d399) !important;
-          box-shadow: 0 2px 8px rgba(16,185,129,0.4) !important;
-        }
-        .marker-semantic { 
-          background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.4) !important;
-        }
-        .marker-syntactic1, .marker-syntactic2 { 
-          background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
-          box-shadow: 0 2px 8px rgba(139,92,246,0.4) !important;
-        }
-        
-        @keyframes markerPulse {
-          0%, 100% { 
-            opacity: 1; 
-            transform: scale(1); 
-          }
-          50% { 
-            opacity: 0.9; 
-            transform: scale(1.05); 
-          }
-        }
-        
-        /* Ensure text doesn't overflow */
-        .text-highlight-container {
-          word-break: break-word;
-          overflow-wrap: break-word;
-          max-width: 100%;
-        }
       `}</style>
     </div>
   );
 }
-
