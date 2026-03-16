@@ -26,7 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const MIN_CHARS = 20;
-  const MAX_CHARS = 500;
+  const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
     if (inputText.trim().length === 0) {
@@ -78,8 +78,8 @@ export default function HomePage() {
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
-            Analyzes texts to detect depressivity markers and alerts professionals working with people 
-            to pay attention and complete further diagnosis of the text author's mental health.
+           You are a specialist working with people and mental health maintenance? 
+            Put the text in the text box to test it for signs of potential depressive indicators for further professional diagnosis.
           </p>
         </div>
       </header>
