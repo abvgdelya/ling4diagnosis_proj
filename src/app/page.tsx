@@ -26,7 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
-  const MIN_CHARS = 20;
+  const MIN_CHARS = 50;
   const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
@@ -202,44 +202,6 @@ export default function HomePage() {
                   })}
                 </div>
 
-                {/* Legend - DARK TEXT */}
-                <div className="bg-gradient-to-r from-slate-100 to-gray-100 p-6 rounded-2xl border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-4 text-lg">📋 Marker Legend</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"></span><span className="font-medium text-gray-900">Lexical (Sentiment)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"></span><span className="font-medium text-gray-900">Morphological1 (Pronouns)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></span><span className="font-medium text-gray-900">Morphological2 (Passive)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></span><span className="font-medium text-gray-900">Semantic (Verbs)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></span><span className="font-medium text-gray-900">Syntactic1 (Length)</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-500 rounded-full"></span><span className="font-medium text-gray-900">Syntactic2 (Pauses)</span></div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* FIXED Text with Color-Coded Markers */}
-            {result.textWithMarkers && (
-              <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 border-2 border-yellow-400/30 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
-                <h3 className="text-2xl font-semibold text-amber-300 mb-6 flex items-center gap-3">
-                  <span className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                    📝
-                  </span>
-                  Text with Color-Coded Markers
-                </h3>
-                <div 
-                  ref={containerRef}
-                  className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm max-h-[500px] overflow-y-auto w-full"
-                  style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(251, 191, 36, 0.6) rgba(15, 23, 42, 0.3)' }}
-                >
-                  <div 
-                    className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-base whitespace-pre-wrap break-words max-w-full"
-                    style={{ lineHeight: '1.7' }}
-                  >
-                    {renderTextWithMarkers(result.textWithMarkers)}
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Depressivity Rate */}
             {result.depressivityPercent !== undefined && (
