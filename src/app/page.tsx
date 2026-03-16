@@ -78,8 +78,7 @@ export default function HomePage() {
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
-            Analyzes texts to detect depressivity markers and alerts professionals working with people 
-            to pay attention and complete further diagnosis of the text author's mental health.
+           You are a specialist working with people and mental health maintenance? Put the text in the text box to test it for signs of potential depressive indicators for further professional diagnosis.
           </p>
         </div>
       </header>
