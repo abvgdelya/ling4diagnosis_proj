@@ -12,13 +12,35 @@ export default function HomePage() {
   const [text, setText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const MAX_CHARS = 20;
+  const [error, setError] = useState("");
+  const MIN_CHARS = 20;
+  const MAX_CHARS = 500;
+
+  const validateText = (inputText: string): string => {
+    if (inputText.trim().length === 0) {
+      return "Ooops! Seems like there is no text. Try again!";
+    }
+    if (inputText.trim().length < MIN_CHARS) {
+      return `Ooops! Seems like there are not enough characters in the text. Try again! (Need ${MIN_CHARS}+ chars)`;
+    }
+    // Basic check for incomprehensible text (all special chars, very short words, etc.)
+    const cleanText = inputText.replace(/[^\w\s]/g, '').toLowerCase();
+    const wordCount = cleanText.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount < 3 || cleanText.length < 10) {
+      return "Ooops! Seems like the text contains errors. Try again!";
+    }
+    return "";
+  };
 
   const analyze = async () => {
-    if (text.length < MAX_CHARS) {
-      alert(`Please enter at least ${MAX_CHARS} characters`);
+    const validationError = validateText(text);
+    if (validationError) {
+      setError(validationError);
+      setResult(null);
       return;
     }
+
+    setError("");
     setLoading(true);
     try {
       const response = await fetch("/api/analyze", {
@@ -29,7 +51,7 @@ export default function HomePage() {
       const data = await response.json();
       setResult(data);
     } catch (error) {
-      console.error("Analysis failed:", error);
+      setError("Analysis service temporarily unavailable. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -44,8 +66,8 @@ export default function HomePage() {
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
-            Analyzes texts to detect depressivity markers and alerts professionals working with people 
-            to pay attention and complete further diagnosis of the text author's mental health.
+            For speacialists working with people and mental health maintenance.
+            Enter a text to see whether it shows any signs of potential depressive indicators.
           </p>
         </div>
       </header>
@@ -56,7 +78,7 @@ export default function HomePage() {
           <div className="text-center mb-10">
             <h2 className="text-3xl font-semibold text-gray-800 mb-4">Analyze Your Text</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Enter at least 20 characters to begin linguistic analysis for mental health markers.
+              Enter between {MIN_CHARS} and {MAX_CHARS} characters for comprehensive linguistic analysis.
             </p>
           </div>
 
@@ -65,26 +87,38 @@ export default function HomePage() {
               <textarea
                 value={text}
                 onChange={e => setText(e.target.value.slice(0, MAX_CHARS))}
-                maxLength={MAX_CHARS}
                 className="w-full h-32 p-6 text-lg border-2 border-blue-200 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all duration-300 resize-vertical font-mono text-gray-900 placeholder-gray-500 shadow-inner"
-                placeholder="Type your text here (minimum 20 characters required)..."
+                placeholder={`Type your text here (${MIN_CHARS}-${MAX_CHARS} characters)...`}
               />
-              <div className="text-right mt-3">
+              <div className="text-right mt-3 flex justify-between items-center">
                 <span className={`text-sm font-semibold px-3 py-1 rounded-full ${
-                  text.length >= MAX_CHARS 
+                  text.length >= MIN_CHARS 
                     ? 'bg-emerald-100 text-emerald-800' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
                   {text.length}/{MAX_CHARS} characters
                 </span>
+                <span className="text-sm text-gray-500">
+                  Min: {MIN_CHARS} chars
+                </span>
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-200 rounded-2xl shadow-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <p className="text-rose-900 font-medium leading-relaxed">{error}</p>
+                </div>
+              </div>
+            )}
+
             <button 
               onClick={analyze} 
-              disabled={loading || text.length < MAX_CHARS}
+              disabled={loading || text.length < MIN_CHARS}
               className={`w-full py-6 px-8 text-xl font-semibold rounded-2xl transition-all duration-300 transform shadow-xl flex items-center justify-center gap-3 group ${
-                loading || text.length < MAX_CHARS
+                loading || text.length < MIN_CHARS
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
                   : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 hover:from-indigo-600 hover:via-purple-600 hover:to-blue-700 text-white shadow-indigo-500/50 hover:shadow-indigo-500/75 active:scale-95'
               }`}
@@ -101,8 +135,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Results Section */}
-        {result && (
+        {/* Results Section - Only show if no error */}
+        {result && !error && (
           <div className="space-y-8">
             {/* Emotion Markers */}
             {result.markers && Object.keys(result.markers).length > 0 && (
@@ -119,7 +153,7 @@ export default function HomePage() {
                       <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
                       <div className="relative">
                         <h4 className="font-semibold text-xl text-gray-900 mb-2 capitalize">{marker}</h4>
-                        <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 -webkit-bg-clip-text -webkit-text-fill-color: transparent bg-clip-text text-transparent mb-2">
+                        <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                           {Math.round(percentage * 100)}%
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
@@ -151,7 +185,7 @@ export default function HomePage() {
             {result.depressivityRate !== undefined && (
               <div className="bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 border-2 border-emerald-200/50 rounded-3xl p-10 text-center shadow-2xl backdrop-blur-xl">
                 <h3 className="text-2xl font-semibold text-emerald-900 mb-6">Final Depressivity Assessment</h3>
-                <div className="text-6xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 -webkit-bg-clip-text -webkit-text-fill-color: transparent bg-clip-text text-transparent mb-4">
+                <div className="text-6xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent mb-4">
                   {Math.round(result.depressivityRate * 100)}%
                 </div>
                 <div className="text-2xl font-semibold text-emerald-900 mb-2">
@@ -174,7 +208,7 @@ export default function HomePage() {
         )}
 
         {/* Debug Section */}
-        {result && (
+        {result && !error && (
           <details className="bg-white/50 backdrop-blur-xl rounded-2xl border border-white/50 p-6 mt-12">
             <summary className="cursor-pointer font-medium text-gray-800 hover:text-indigo-600 transition-colors p-4 rounded-xl hover:bg-white/60">
               🔧 View Raw Analysis Data
@@ -190,7 +224,7 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
         
         * { font-family: 'Inter', sans-serif; }
-        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+        h1, h2, h3 { font-family: 'Playfair Display', serif; }
         
         .marker {
           background: linear-gradient(135deg, #ff6b6b, #ff8e8e) !important;
@@ -214,4 +248,3 @@ export default function HomePage() {
     </div>
   );
 }
-
