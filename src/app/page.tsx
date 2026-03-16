@@ -26,7 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const MIN_CHARS = 20;
-  const MAX_CHARS = 500;
+  const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
     if (inputText.trim().length === 0) {
