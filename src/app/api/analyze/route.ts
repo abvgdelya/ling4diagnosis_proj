@@ -20,7 +20,7 @@ interface AnalysisResult {
 
 // ✅ REAL Active/Passive Detection
 const analyzeActivePassive = (text: string) => {
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 10);
   let passiveCount = 0;
   let activeCount = 0;
 
@@ -52,7 +52,7 @@ const analyzeActivePassive = (text: string) => {
 
 // ✅ REAL Semantic Analysis (meaning-based, >50%)
 const analyzeSemanticMarkers = (text: string) => {
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 5);
+ const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 5);
   const classifiedVerbs: any[] = [];
   
   sentences.forEach(sentence => {
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     const words = text.toLowerCase().split(/\W+/).filter(Boolean);
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 5);
+    const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 5);
 
     // 1. LEXICAL: DistilBERT
     let polarityScore = 20;
