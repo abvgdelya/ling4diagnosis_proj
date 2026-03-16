@@ -136,55 +136,64 @@ export default function Home() {
           </div>
         )}
 
-        {result && (
-          <div style={{ 
-            padding: 32, 
-            background: 'rgba(34,197,94,0.2)', 
-            border: '2px solid #10b981',
-            borderRadius: 20
-          }}>
-            <h2 style={{ 
-              fontSize: '2rem', 
-              marginBottom: 24, 
-              textAlign: 'center' 
-            }}>
-              📊 Analysis Results
-            </h2>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: 24, 
-              marginBottom: 24 
-            }}>
-              <div style={{ 
-                padding: 24, 
-                background: 'rgba(255,255,255,0.2)', 
-                borderRadius: 16,
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#10b981' }}>
-                  {result.score}%
-                </div>
-                <div style={{ fontSize: '1.2rem', opacity: 0.9 }}>
-                  {result.severity} Risk
-                </div>
-              </div>
-              <div style={{ 
-                padding: 24, 
-                background: 'rgba(255,255,255,0.2)', 
-                borderRadius: 16
-              }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 8 }}>
-                  Evaluation:
-                </div>
-                <div style={{ fontSize: '1.3rem', color: '#10b981' }}>
-                  {result.evaluation}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+{result && (
+  <div style={{ 
+    marginTop: 30, 
+    padding: 32, 
+    background: 'rgba(34,197,94,0.2)', 
+    border: '2px solid #10b981', 
+    borderRadius: 20 
+  }}>
+    <h2 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: 24 }}>
+      📊 Analysis Results
+    </h2>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div style={{ 
+        padding: 24, 
+        background: 'rgba(255,255,255,0.2)', 
+        borderRadius: 16,
+        textAlign: 'center'
+      }}>
+        {/* ✅ ДИНАМИЧЕСКИЙ ЦВЕТ ПО SCORE */}
+        <div style={{ 
+          fontSize: '3rem', 
+          fontWeight: 900, 
+          color: result.score > 70 ? '#991b1b' :        // Dark Red (High)
+                result.score > 45 ? '#c2410c' :        // Dark Orange (Medium)  
+                '#166534'                              // Dark Green (Low)
+        }}>
+          {result.score}%
+        </div>
+        {/* ✅ ЦВЕТ SEVERITY */}
+        <div style={{ 
+          fontSize: '1.2rem', 
+          opacity: 0.9,
+          color: result.severity === 'High' ? '#991b1b' :
+                result.severity === 'Medium' ? '#c2410c' :
+                '#166534'
+        }}>
+          {result.severity} Risk
+        </div>
+      </div>
+      <div style={{ 
+        padding: 24, 
+        background: 'rgba(255,255,255,0.2)', 
+        borderRadius: 16 
+      }}>
+        <div style={{ 
+          fontSize: '1.3rem', 
+          // ✅ ЦВЕТ EVALUATION по severity
+          color: result.severity === 'High' ? '#991b1b' :
+                result.severity === 'Medium' ? '#c2410c' :
+                '#166534',
+          lineHeight: 1.4
+        }}>
+          {result.evaluation}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
