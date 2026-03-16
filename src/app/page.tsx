@@ -4,136 +4,143 @@ import { useState } from "react";
 
 interface AnalysisResult {
   score: number;
-  risk: "Low" | "Medium" | "High";
-  depressivityPercent: number;
-  evaluation: string;
-  textWithMarkers: string;
+  risk?: "Low" | "Medium" | "High";
+  depressivityPercent?: number;
+  evaluation?: string;
+  textWithMarkers?: string;
+  text?: string;
 }
 
 export default function HomePage() {
   const [text, setText] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
+    if (text.length < 50) {
+      setError("Text must be 50+ characters");
+      return;
+    }
+    
     setLoading(true);
+    setError("");
+    
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
+      
       const data = await res.json();
+      console.log("API returned:", data);
       setResult(data);
-    } catch (err) {
-      console.error("Error:", err);
+    } catch (err: any) {
+      setError("API Error: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!result) {
-    return (
-      <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
-            Linguistic Depressivity Analysis
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Paste text to analyze linguistic markers of depressivity
-          </p>
-        </div>
-
-        <div className="max-w-2xl mx-auto">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full h-40 p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-300 resize-vertical"
-            placeholder="Paste your text here for analysis..."
-          />
-          
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !text.trim()}
-            className="w-full mt-4 px-8 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
-          >
-            {loading ? "🔄 Analyzing..." : "🚀 Analyze Text"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white min-h-screen">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
+    <div style={{ 
+      maxWidth: "800px", 
+      margin: "0 auto", 
+      padding: "2rem", 
+      backgroundColor: "#ffffff",
+      minHeight: "100vh",
+      fontFamily: "Arial, sans-serif"
+    }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+        <h1 style={{ 
+          fontSize: "2.5rem", 
+          fontWeight: "bold", 
+          background: "linear-gradient(45deg, #8b5cf6, #3b82f6)", 
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          marginBottom: "1rem"
+        }}>
           Linguistic Depressivity Analysis
         </h1>
+        <p style={{ color: "#6b7280", maxWidth: "500px", margin: "0 auto" }}>
+          Enter 50+ characters to analyze linguistic markers
+        </p>
       </div>
 
-      <div className="max-w-2xl mx-auto mb-12">
-        <button
-          onClick={() => {
-            setText("");
-            setResult(null);
+      {/* Input Form */}
+      <div style={{ maxWidth: "500px", margin: "0 auto 2rem" }}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          style={{
+            width: "100%",
+            height: "160px",
+            padding: "1rem",
+            border: "2px solid #e5e7eb",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontFamily: "Arial, sans-serif",
+            color: "#111827",
+            backgroundColor: "#ffffff",
+            resize: "vertical"
           }}
-          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+          placeholder="Type or paste your text here (50+ characters)..."
+        />
+        <div style={{ 
+          textAlign: "center", 
+          marginTop: "1rem",
+          color: text.length >= 50 ? "#059669" : "#dc2626",
+          fontWeight: "500"
+        }}>
+          {text.length}/50 characters
+        </div>
+        
+        <button
+          onClick={handleSubmit}
+          disabled={loading || text.length < 50}
+          style={{
+            width: "100%",
+            marginTop: "1rem",
+            padding: "1rem 2rem",
+            background: loading || text.length < 50 
+              ? "#9ca3af" 
+              : "linear-gradient(45deg, #8b5cf6, #3b82f6)",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "600",
+            cursor: loading || text.length < 50 ? "not-allowed" : "pointer"
+          }}
         >
-          New Analysis
+          {loading ? "🔄 Analyzing..." : `🚀 Analyze (${text.length}/50)`}
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-8 shadow-xl">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">
-                {result.risk === "High" ? "🔴" : result.risk === "Medium" ? "🟡" : "🟢"}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Risk: <span className={`font-black ${
-                  result.risk === "High" ? "text-red-600" : 
-                  result.risk === "Medium" ? "text-orange-600" : "text-green-600"
-                }`}>
-                  {result.risk}
-                </span>
-              </h2>
-              <p className="text-3xl font-black text-gray-800">
-                {result.depressivityPercent}%
-              </p>
-              <p className="text-sm text-gray-600 mt-1">{result.evaluation}</p>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold mb-4 text-gray-800">📝 Text with Markers</h3>
-            <div 
-              className="bg-gray-50 border-2 border-dashed border-purple-200 rounded-xl p-6 min-h-[150px] text-gray-900 leading-relaxed"
-              style={{ lineHeight: "1.7" }}
-              dangerouslySetInnerHTML={{ __html: result.textWithMarkers || "" }}
-            />
-          </div>
+      {/* Error */}
+      {error && (
+        <div style={{
+          maxWidth: "500px",
+          margin: "0 auto 2rem",
+          padding: "1rem",
+          backgroundColor: "#fef2f2",
+          border: "1px solid #fecaca",
+          borderRadius: "8px",
+          color: "#dc2626"
+        }}>
+          {error}
         </div>
-      </div>
+      )}
 
-      <style jsx global>{`
-        .marker {
-          background-color: #fef9c3;
-          border-bottom: 2px solid #d946ef;
-          font-weight: 500;
-          border-radius: 2px;
-          padding: 0 2px;
-        }
-        .marker-lexical { border-color: #ef4444; }
-        .marker-morphological1 { border-color: #059669; }
-        .marker-morphological2 { border-color: #0891b2; }
-        .marker-semantic { border-color: #f59e0b; }
-        .marker-syntactic1 { border-color: #ef4444; }
-        .marker-syntactic2 { border-color: #8b5cf6; }
-      `}</style>
-    </div>
-  );
-}
+      {/* Results */}
+      {result && (
+        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
+          <div style={{
+            background: "linear-gradient(135deg, #fdf4ff 0%, #f0f9ff 100%)",
+            border: "2px solid #e9d5ff",
+            borderRadius: "20px",
+            padding: "2rem",
+            boxShadow: "0 20px 25px -5px rgba(0, 0,0, 0.1)"
+         
