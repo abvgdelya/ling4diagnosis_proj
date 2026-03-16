@@ -40,7 +40,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-blue-100">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
@@ -54,9 +54,7 @@ export default function HomePage() {
         {/* Input Section */}
         <div className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-10 mb-12">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-serif font-semibold text-gray-800 mb-4">
-              Analyze Your Text
-            </h2>
+            <h2 className="text-3xl font-semibold text-gray-800 mb-4">Analyze Your Text</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Enter at least 20 characters to begin linguistic analysis for mental health markers.
             </p>
@@ -68,9 +66,7 @@ export default function HomePage() {
                 value={text}
                 onChange={e => setText(e.target.value.slice(0, MAX_CHARS))}
                 maxLength={MAX_CHARS}
-                className="w-full h-32 p-6 text-lg border-2 border-blue-200 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 
-                           focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all duration-300
-                           resize-vertical font-mono text-gray-900 placeholder-gray-500 shadow-inner"
+                className="w-full h-32 p-6 text-lg border-2 border-blue-200 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all duration-300 resize-vertical font-mono text-gray-900 placeholder-gray-500 shadow-inner"
                 placeholder="Type your text here (minimum 20 characters required)..."
               />
               <div className="text-right mt-3">
@@ -87,8 +83,7 @@ export default function HomePage() {
             <button 
               onClick={analyze} 
               disabled={loading || text.length < MAX_CHARS}
-              className={`w-full py-6 px-8 text-xl font-serif font-semibold rounded-2xl transition-all duration-300 transform 
-                         shadow-xl flex items-center justify-center gap-3 group ${
+              className={`w-full py-6 px-8 text-xl font-semibold rounded-2xl transition-all duration-300 transform shadow-xl flex items-center justify-center gap-3 group ${
                 loading || text.length < MAX_CHARS
                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
                   : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 hover:from-indigo-600 hover:via-purple-600 hover:to-blue-700 text-white shadow-indigo-500/50 hover:shadow-indigo-500/75 active:scale-95'
@@ -112,7 +107,7 @@ export default function HomePage() {
             {/* Emotion Markers */}
             {result.markers && Object.keys(result.markers).length > 0 && (
               <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-8 shadow-2xl">
-                <h3 className="text-2xl font-serif font-semibold text-gray-800 mb-6 flex items-center gap-3">
+                <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-3">
                   <span className="w-10 h-10 bg-gradient-to-r from-pink-400 to-rose-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     🧠
                   </span>
@@ -120,12 +115,11 @@ export default function HomePage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(result.markers).map(([marker, percentage]: [string, number]) => (
-                    <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default
-                                                from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
+                    <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
                       <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
                       <div className="relative">
-                        <h4 className="font-serif font-semibold text-xl text-gray-900 mb-2 capitalize">{marker}</h4>
-                        <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                        <h4 className="font-semibold text-xl text-gray-900 mb-2 capitalize">{marker}</h4>
+                        <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 -webkit-bg-clip-text -webkit-text-fill-color: transparent bg-clip-text text-transparent mb-2">
                           {Math.round(percentage * 100)}%
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
@@ -142,13 +136,13 @@ export default function HomePage() {
             {/* Marked Text */}
             {result.textWithMarkers && (
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200/50 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
-                <h3 className="text-2xl font-serif font-semibold text-amber-900 mb-6 flex items-center gap-3">
+                <h3 className="text-2xl font-semibold text-amber-900 mb-6 flex items-center gap-3">
                   <span className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     📝
                   </span>
                   Text with Markers
                 </h3>
-                <div className="prose prose-lg max-w-none bg-white/80 rounded-2xl p-8 shadow-inner border border-yellow-100/50 backdrop-blur-sm"
+                <div className="prose prose-lg max-w-none bg-white/80 rounded-2xl p-8 shadow-inner border border-yellow-100/50 backdrop-blur-sm font-mono text-lg leading-relaxed"
                      dangerouslySetInnerHTML={{__html: result.textWithMarkers}} />
               </div>
             )}
@@ -156,10 +150,8 @@ export default function HomePage() {
             {/* Depressivity Rate */}
             {result.depressivityRate !== undefined && (
               <div className="bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 border-2 border-emerald-200/50 rounded-3xl p-10 text-center shadow-2xl backdrop-blur-xl">
-                <h3 className="text-2xl font-serif font-semibold text-emerald-900 mb-6">
-                  Final Depressivity Assessment
-                </h3>
-                <div className="text-6xl font-serif font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent mb-4">
+                <h3 className="text-2xl font-semibold text-emerald-900 mb-6">Final Depressivity Assessment</h3>
+                <div className="text-6xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 -webkit-bg-clip-text -webkit-text-fill-color: transparent bg-clip-text text-transparent mb-4">
                   {Math.round(result.depressivityRate * 100)}%
                 </div>
                 <div className="text-2xl font-semibold text-emerald-900 mb-2">
@@ -194,24 +186,11 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="mt-24 py-12 bg-white/50 backdrop-blur-md border-t border-white/50">
-        <div className="max-w-4xl mx-auto px-6 text-center text-gray-600">
-          <p className="text-lg font-medium mb-2">Ling4Diagnosis © 2026</p>
-          <p className="text-sm">A linguistic analysis tool for mental health professionals</p>
-        </div>
-      </footer>
-
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
         
-        * {
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        h1, h2, h3, .font-serif {
-          font-family: 'Playfair Display', Georgia, serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
         
         .marker {
           background: linear-gradient(135deg, #ff6b6b, #ff8e8e) !important;
@@ -235,3 +214,4 @@ export default function HomePage() {
     </div>
   );
 }
+
