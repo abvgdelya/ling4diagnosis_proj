@@ -25,7 +25,7 @@ export default function HomePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const MIN_CHARS = 20;
+  const MIN_CHARS = 50;
   const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
@@ -172,7 +172,7 @@ export default function HomePage() {
                       syntactic1: "Short sentences (11-12 words) vs long (>25%)",
                       syntactic2: "Excessive ellipsis/pauses (≥25% sentences)"
                     };
-                    const colorClass = marker.replace(/^\w/, c => c.toUpperCase());
+                    const colorClass = marker.replace(/^./, c => c.toUpperCase());
                     return (
                       <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
                         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
@@ -195,22 +195,22 @@ export default function HomePage() {
                   })}
                 </div>
 
-                {/* Legend */}
+                {/* Legend - FIXED DARKER TEXT */}
                 <div className="bg-gradient-to-r from-slate-100 to-gray-100 p-6 rounded-2xl border border-gray-200">
                   <h4 className="font-semibold text-gray-800 mb-4 text-lg">📋 Marker Legend</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"></span>Lexical (Sentiment)</div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"></span>Morphological1 (Pronouns)</div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></span>Morphological2 (Passive)</div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></span>Semantic (Verbs)</div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></span>Syntactic1 (Length)</div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-500 rounded-full"></span>Syntactic2 (Pauses)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"></span><span className="font-medium text-gray-900">Lexical (Sentiment)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"></span><span className="font-medium text-gray-900">Morphological1 (Pronouns)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></span><span className="font-medium text-gray-900">Morphological2 (Passive)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></span><span className="font-medium text-gray-900">Semantic (Verbs)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></span><span className="font-medium text-gray-900">Syntactic1 (Length)</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-500 rounded-full"></span><span className="font-medium text-gray-900">Syntactic2 (Pauses)</span></div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* FIXED Text with Color-Coded Markers */}
+            {/* FIXED Text with Color-Coded Markers - NO SCROLL JUMP */}
             {result.textWithMarkers && (
               <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 border-2 border-yellow-400/30 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                 <h3 className="text-2xl font-semibold text-amber-300 mb-6 flex items-center gap-3">
@@ -219,12 +219,23 @@ export default function HomePage() {
                   </span>
                   Text with Color-Coded Markers
                 </h3>
-                <div className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm overflow-auto max-h-96">
-                  <div 
-                    className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-xl"
-                    style={{ lineHeight: '1.8' }}
-                    dangerouslySetInnerHTML={{__html: result.textWithMarkers}} 
-                  />
+                <div className="relative">
+                  {/* Fixed height container to prevent layout shift */}
+                  <div className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm h-[400px] overflow-hidden">
+                    <div 
+                      className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-xl absolute whitespace-pre-wrap"
+                      style={{ 
+                        lineHeight: '1.8',
+                        width: '100%',
+                        paddingRight: '1rem'
+                      }}
+                      dangerouslySetInnerHTML={{__html: result.textWithMarkers}} 
+                    />
+                  </div>
+                  {/* Scrollable overlay with custom scrollbar */}
+                  <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-400/60 scrollbar-track-slate-800/50 hover:scrollbar-thumb-yellow-400/80 -mx-2 px-2">
+                    <div className="h-[400px]"></div>
+                  </div>
                 </div>
               </div>
             )}
@@ -273,46 +284,75 @@ export default function HomePage() {
         * { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
         
-        /* BASE MARKER */
+        /* Custom Scrollbar */
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: rgba(15, 23, 42, 0.3);
+          border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(251, 191, 36, 0.6);
+          border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: rgba(251, 191, 36, 0.8);
+        }
+        
+        /* BASE MARKER - FIXED POSITIONING */
         .marker {
           color: white !important;
-          padding: 6px 12px !important;
-          border-radius: 12px !important;
+          padding: 4px 8px !important;
+          border-radius: 8px !important;
           font-weight: 600 !important;
-          font-size: 0.875rem !important;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+          font-size: 0.8rem !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
           display: inline-block !important;
-          margin: 2px 4px !important;
-          animation: pulse 2s infinite !important;
-          border: 2px solid rgba(255,255,255,0.3) !important;
+          margin: 1px 2px !important;
+          vertical-align: middle !important;
+          line-height: 1.2 !important;
+          position: relative !important;
+          z-index: 10 !important;
+          border: 1px solid rgba(255,255,255,0.4) !important;
           font-family: inherit !important;
+          transform: translateZ(0) !important;
+          animation: markerGlow 2s ease-in-out infinite !important;
         }
         
         /* COLOR-CODED MARKERS */
         .marker-lexical { 
           background: linear-gradient(135deg, #ef4444, #f87171) !important;
-          box-shadow: 0 4px 12px rgba(239,68,68,0.5) !important;
+          box-shadow: 0 2px 8px rgba(239,68,68,0.6) !important;
         }
         .marker-morphological1 { 
           background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
-          box-shadow: 0 4px 12px rgba(245,158,11,0.5) !important;
+          box-shadow: 0 2px 8px rgba(245,158,11,0.6) !important;
         }
         .marker-morphological2 { 
           background: linear-gradient(135deg, #10b981, #34d399) !important;
-          box-shadow: 0 4px 12px rgba(16,185,129,0.5) !important;
+          box-shadow: 0 2px 8px rgba(16,185,129,0.6) !important;
         }
         .marker-semantic { 
           background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
-          box-shadow: 0 4px 12px rgba(59,130,246,0.5) !important;
+          box-shadow: 0 2px 8px rgba(59,130,246,0.6) !important;
         }
         .marker-syntactic1, .marker-syntactic2 { 
           background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
-          box-shadow: 0 4px 12px rgba(139,92,246,0.5) !important;
+          box-shadow: 0 2px 8px rgba(139,92,246,0.6) !important;
         }
         
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.9; transform: scale(1.05); }
+        @keyframes markerGlow {
+          0%, 100% { 
+            opacity: 1; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+            transform: translateZ(0) scale(1) !important;
+          }
+          50% { 
+            opacity: 0.95; 
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
+            transform: translateZ(0) scale(1.02) !important;
+          }
         }
       `}</style>
     </div>
