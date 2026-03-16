@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface FoundMarker {
   word: string;
@@ -25,7 +25,8 @@ export default function HomePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const MIN_CHARS = 50;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const MIN_CHARS = 20;
   const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
@@ -67,6 +68,11 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Simple HTML parser for marker display
+  const renderTextWithMarkers = (htmlString: string) => {
+    return <div className="text-highlight-container" dangerouslySetInnerHTML={{ __html: htmlString }} />;
   };
 
   return (
@@ -172,7 +178,6 @@ export default function HomePage() {
                       syntactic1: "Short sentences (11-12 words) vs long (>25%)",
                       syntactic2: "Excessive ellipsis/pauses (≥25% sentences)"
                     };
-                    const colorClass = marker.replace(/^./, c => c.toUpperCase());
                     return (
                       <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
                         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
@@ -182,11 +187,13 @@ export default function HomePage() {
                             {strengthPercent}%
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner mb-4">
-                            <div className={`h-3 rounded-full transition-all duration-1000 ${colorClass === 'Lexical' ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
-                              colorClass === 'Morphological1' ? 'bg-gradient-to-r from-orange-500 to-yellow-500' :
-                              colorClass === 'Morphological2' ? 'bg-gradient-to-r from-teal-500 to-cyan-500' :
-                              colorClass === 'Semantic' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' :
-                              'bg-gradient-to-r from-green-500 to-emerald-500'}`} style={{ width: `${strengthPercent}%` }}></div>
+                            <div className={`h-3 rounded-full transition-all duration-1000 bg-gradient-to-r ${
+                              marker === 'lexical' ? 'from-red-500 to-pink-500' : 
+                              marker === 'morphological1' ? 'from-orange-500 to-yellow-500' :
+                              marker === 'morphological2' ? 'from-teal-500 to-cyan-500' :
+                              marker === 'semantic' ? 'from-blue-500 to-indigo-500' :
+                              'from-green-500 to-emerald-500'
+                            }`} style={{ width: `${strengthPercent}%` }}></div>
                           </div>
                           <p className="text-sm text-gray-600 leading-relaxed">{markerInfo[marker as keyof typeof markerInfo]}</p>
                         </div>
@@ -195,7 +202,7 @@ export default function HomePage() {
                   })}
                 </div>
 
-                {/* Legend - FIXED DARKER TEXT */}
+                {/* Legend - DARK TEXT */}
                 <div className="bg-gradient-to-r from-slate-100 to-gray-100 p-6 rounded-2xl border border-gray-200">
                   <h4 className="font-semibold text-gray-800 mb-4 text-lg">📋 Marker Legend</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
@@ -210,7 +217,7 @@ export default function HomePage() {
               </div>
             )}
 
-            {/* FIXED Text with Color-Coded Markers - NO SCROLL JUMP */}
+            {/* FIXED Text with Color-Coded Markers */}
             {result.textWithMarkers && (
               <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 border-2 border-yellow-400/30 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                 <h3 className="text-2xl font-semibold text-amber-300 mb-6 flex items-center gap-3">
@@ -219,22 +226,16 @@ export default function HomePage() {
                   </span>
                   Text with Color-Coded Markers
                 </h3>
-                <div className="relative">
-                  {/* Fixed height container to prevent layout shift */}
-                  <div className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm h-[400px] overflow-hidden">
-                    <div 
-                      className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-xl absolute whitespace-pre-wrap"
-                      style={{ 
-                        lineHeight: '1.8',
-                        width: '100%',
-                        paddingRight: '1rem'
-                      }}
-                      dangerouslySetInnerHTML={{__html: result.textWithMarkers}} 
-                    />
-                  </div>
-                  {/* Scrollable overlay with custom scrollbar */}
-                  <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-400/60 scrollbar-track-slate-800/50 hover:scrollbar-thumb-yellow-400/80 -mx-2 px-2">
-                    <div className="h-[400px]"></div>
+                <div 
+                  ref={containerRef}
+                  className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm max-h-[500px] overflow-y-auto w-full"
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(251, 191, 36, 0.6) rgba(15, 23, 42, 0.3)' }}
+                >
+                  <div 
+                    className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-base whitespace-pre-wrap break-words max-w-full"
+                    style={{ lineHeight: '1.7' }}
+                  >
+                    {renderTextWithMarkers(result.textWithMarkers)}
                   </div>
                 </div>
               </div>
@@ -284,77 +285,82 @@ export default function HomePage() {
         * { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
         
-        /* Custom Scrollbar */
-        .scrollbar-thin::-webkit-scrollbar {
-          width: 6px;
+        /* Text container scrollbar */
+        .text-highlight-container::-webkit-scrollbar {
+          width: 8px;
         }
-        .scrollbar-thin::-webkit-scrollbar-track {
+        .text-highlight-container::-webkit-scrollbar-track {
           background: rgba(15, 23, 42, 0.3);
-          border-radius: 3px;
+          border-radius: 4px;
         }
-        .scrollbar-thin::-webkit-scrollbar-thumb {
+        .text-highlight-container::-webkit-scrollbar-thumb {
           background: rgba(251, 191, 36, 0.6);
-          border-radius: 3px;
+          border-radius: 4px;
         }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        .text-highlight-container::-webkit-scrollbar-thumb:hover {
           background: rgba(251, 191, 36, 0.8);
         }
         
-        /* BASE MARKER - FIXED POSITIONING */
+        /* MARKER STYLES - Only show when actually present */
         .marker {
-          color: white !important;
-          padding: 4px 8px !important;
-          border-radius: 8px !important;
-          font-weight: 600 !important;
-          font-size: 0.8rem !important;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
           display: inline-block !important;
-          margin: 1px 2px !important;
+          color: white !important;
+          padding: 2px 6px !important;
+          margin: 0 1px !important;
+          border-radius: 6px !important;
+          font-weight: 600 !important;
+          font-size: 0.75rem !important;
+          line-height: 1.3 !important;
           vertical-align: middle !important;
-          line-height: 1.2 !important;
           position: relative !important;
-          z-index: 10 !important;
-          border: 1px solid rgba(255,255,255,0.4) !important;
+          z-index: 20 !important;
+          border: 1px solid rgba(255,255,255,0.3) !important;
           font-family: inherit !important;
-          transform: translateZ(0) !important;
-          animation: markerGlow 2s ease-in-out infinite !important;
+          animation: markerPulse 1.5s ease-in-out infinite !important;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
         }
         
-        /* COLOR-CODED MARKERS */
         .marker-lexical { 
           background: linear-gradient(135deg, #ef4444, #f87171) !important;
-          box-shadow: 0 2px 8px rgba(239,68,68,0.6) !important;
+          box-shadow: 0 2px 8px rgba(239,68,68,0.4) !important;
         }
         .marker-morphological1 { 
           background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
-          box-shadow: 0 2px 8px rgba(245,158,11,0.6) !important;
+          box-shadow: 0 2px 8px rgba(245,158,11,0.4) !important;
         }
         .marker-morphological2 { 
           background: linear-gradient(135deg, #10b981, #34d399) !important;
-          box-shadow: 0 2px 8px rgba(16,185,129,0.6) !important;
+          box-shadow: 0 2px 8px rgba(16,185,129,0.4) !important;
         }
         .marker-semantic { 
           background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.6) !important;
+          box-shadow: 0 2px 8px rgba(59,130,246,0.4) !important;
         }
         .marker-syntactic1, .marker-syntactic2 { 
           background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
-          box-shadow: 0 2px 8px rgba(139,92,246,0.6) !important;
+          box-shadow: 0 2px 8px rgba(139,92,246,0.4) !important;
         }
         
-        @keyframes markerGlow {
+        @keyframes markerPulse {
           0%, 100% { 
             opacity: 1; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
-            transform: translateZ(0) scale(1) !important;
+            transform: scale(1); 
           }
           50% { 
-            opacity: 0.95; 
-            box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important;
-            transform: translateZ(0) scale(1.02) !important;
+            opacity: 0.9; 
+            transform: scale(1.05); 
           }
+        }
+        
+        /* Ensure text doesn't overflow */
+        .text-highlight-container {
+          word-break: break-word;
+          overflow-wrap: break-word;
+          max-width: 100%;
         }
       `}</style>
     </div>
   );
 }
+
