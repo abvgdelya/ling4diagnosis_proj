@@ -1,11 +1,23 @@
 "use client";
 import { useState } from "react";
 
+interface FoundMarker {
+  word: string;
+  position: number;
+  type: "lexical" | "morphological1" | "morphological2" | "semantic" | "syntactic1" | "syntactic2";
+  strength: number;
+}
+
 interface AnalysisResult {
-  textWithMarkers?: string;
-  markers?: { [key: string]: number };
-  depressivityRate?: number;
-  [key: string]: any;
+  score: number;
+  risk: "Low" | "Medium" | "High";
+  depressivityPercent: number;
+  presentMarkers: string[];
+  markerStrengths: Record<string, number>;
+  criteria: Record<string, { strength: number; present: boolean }>;
+  evaluation: string;
+  foundMarkers: FoundMarker[];
+  textWithMarkers: string;
 }
 
 export default function HomePage() {
@@ -23,7 +35,6 @@ export default function HomePage() {
     if (inputText.trim().length < MIN_CHARS) {
       return `Ooops! Seems like there are not enough characters in the text. Try again! (Need ${MIN_CHARS}+ chars)`;
     }
-    // Basic check for incomprehensible text (all special chars, very short words, etc.)
     const cleanText = inputText.replace(/[^\w\s]/g, '').toLowerCase();
     const wordCount = cleanText.trim().split(/\s+/).filter(Boolean).length;
     if (wordCount < 3 || cleanText.length < 10) {
@@ -51,7 +62,8 @@ export default function HomePage() {
       const data = await response.json();
       setResult(data);
     } catch (error) {
-      setError("Analysis service temporarily unavailable. Please try again.");
+      setError("Analysis service temporarily unavailable. Please try again later.");
+      console.error("API Error:", error);
     } finally {
       setLoading(false);
     }
@@ -66,8 +78,8 @@ export default function HomePage() {
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
-            For speacialists working with people and mental health maintenance.
-            Enter a text to see whether it shows any signs of potential depressive indicators.
+            Analyzes texts to detect depressivity markers and alerts professionals working with people 
+            to pay attention and complete further diagnosis of the text author's mental health.
           </p>
         </div>
       </header>
@@ -135,34 +147,37 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Results Section - Only show if no error */}
+        {/* Results Section */}
         {result && !error && (
           <div className="space-y-8">
             {/* Emotion Markers */}
-            {result.markers && Object.keys(result.markers).length > 0 && (
+            {result.markerStrengths && Object.keys(result.markerStrengths).length > 0 && (
               <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-8 shadow-2xl">
                 <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-3">
                   <span className="w-10 h-10 bg-gradient-to-r from-pink-400 to-rose-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     🧠
                   </span>
-                  Emotion Markers Detected
+                  Linguistic Markers Detected
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.entries(result.markers).map(([marker, percentage]: [string, number]) => (
-                    <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
-                      <div className="relative">
-                        <h4 className="font-semibold text-xl text-gray-900 mb-2 capitalize">{marker}</h4>
-                        <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                          {Math.round(percentage * 100)}%
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000"
-                               style={{ width: `${Math.round(percentage * 100)}%` }}></div>
+                  {Object.entries(result.markerStrengths).map(([marker, strength]: [string, number]) => {
+                    const strengthPercent = Math.round(strength);
+                    return (
+                      <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
+                        <div className="relative">
+                          <h4 className="font-semibold text-xl text-gray-900 mb-2 capitalize">{marker.replace(/([A-Z])/g, ' $1')}</h4>
+                          <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                            {strengthPercent}%
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000"
+                                 style={{ width: `${strengthPercent}%` }}></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -182,25 +197,24 @@ export default function HomePage() {
             )}
 
             {/* Depressivity Rate */}
-            {result.depressivityRate !== undefined && (
+            {result.depressivityPercent !== undefined && (
               <div className="bg-gradient-to-r from-emerald-50 via-green-50 to-teal-50 border-2 border-emerald-200/50 rounded-3xl p-10 text-center shadow-2xl backdrop-blur-xl">
                 <h3 className="text-2xl font-semibold text-emerald-900 mb-6">Final Depressivity Assessment</h3>
                 <div className="text-6xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent mb-4">
-                  {Math.round(result.depressivityRate * 100)}%
+                  {result.depressivityPercent}%
                 </div>
                 <div className="text-2xl font-semibold text-emerald-900 mb-2">
                   Risk Level: 
                   <span className={`ml-2 px-4 py-2 rounded-full text-lg font-bold ${
-                    result.depressivityRate > 0.7 ? 'bg-red-200 text-red-800' :
-                    result.depressivityRate > 0.4 ? 'bg-amber-200 text-amber-800' :
+                    result.risk === 'High' ? 'bg-red-200 text-red-800' :
+                    result.risk === 'Medium' ? 'bg-amber-200 text-amber-800' :
                     'bg-emerald-200 text-emerald-800'
                   }`}>
-                    {result.depressivityRate > 0.7 ? 'HIGH' : 
-                     result.depressivityRate > 0.4 ? 'MODERATE' : 'LOW'}
+                    {result.risk}
                   </span>
                 </div>
                 <p className="text-lg text-emerald-800 mt-4 max-w-2xl mx-auto leading-relaxed">
-                  Professionals should {result.depressivityRate > 0.4 ? 'consider' : 'monitor'} further evaluation.
+                  {result.evaluation}
                 </p>
               </div>
             )}
@@ -239,6 +253,11 @@ export default function HomePage() {
           animation: pulse 2s infinite !important;
           border: 2px solid rgba(255,255,255,0.3) !important;
         }
+        
+        .marker-morphological1 { background: linear-gradient(135deg, #ff9f43, #ffbf69) !important; box-shadow: 0 4px 12px rgba(255,159,67,0.4) !important; }
+        .marker-morphological2 { background: linear-gradient(135deg, #4ecdc4, #6cdbd1) !important; box-shadow: 0 4px 12px rgba(78,205,196,0.4) !important; }
+        .marker-semantic { background: linear-gradient(135deg, #45b7d1, #5fcde1) !important; box-shadow: 0 4px 12px rgba(69,183,209,0.4) !important; }
+        .marker-syntactic1, .marker-syntactic2 { background: linear-gradient(135deg, #96ceb4, #b8e6c9) !important; box-shadow: 0 4px 12px rgba(150,206,180,0.4) !important; }
         
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
