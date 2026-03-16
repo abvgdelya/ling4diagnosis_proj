@@ -89,6 +89,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ✅ НАЙДЕННЫЕ МАРКЕРЫ с позициями
+const foundMarkers = negativeMatches.map((word, index) => ({
+  word,
+  position: text.toLowerCase().indexOf(word, index * 2), // примерная позиция
+  strength: word === 'depressed' || word === 'hopeless' ? 'high' : 'medium'
+}));
+
+return NextResponse.json({
+  score,
+  severity,
+  presentMarkers,
+  markerStrengths,
+  criteria,
+  evaluation,
+  // ✅ НОВЫЕ ДАННЫЕ
+  foundMarkers, 
+  textWithMarkers: text.split(' ').map((word, i) => 
+    negativeMatches.includes(word.toLowerCase()) ? 
+    `<mark style="background: #fee2e2; color: #991b1b">${word}</mark>` : word
+  ).join(' ')
+});
+
 function countWords(words: string[], targets: string[]): number {
   return words.filter((w: string) => targets.some((t: string) => w.includes(t))).length;
 }
