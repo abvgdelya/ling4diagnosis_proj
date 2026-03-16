@@ -9,7 +9,8 @@ interface FoundMarker {
 
 interface AnalysisResult {
   score: number;
-  severity: string;
+  risk: "Low" | "Medium" | "High";
+  depressivityPercent: number;
   presentMarkers: string[];
   markerStrengths: Record<string, number>;
   criteria: Record<string, { strength: number; present: boolean }>;
@@ -96,6 +97,30 @@ const analyzeSemanticMarkers = (text: string) => {
   return { semanticRatio, classifiedVerbs };
 };
 
+// 👀 NEW: helper to wrap markers in HTML spans
+function highlightMarkers(text: string, foundMarkers: FoundMarker[]): string {
+  let highlighted = text;
+
+  const sortedMarkers = foundMarkers
+    .slice()
+    .sort((a, b) => b.position - a.position); // descending so we don’t break indices
+
+  for (const { word, position, type } of sortedMarkers) {
+    if (position >= 0 && position < text.length) {
+      const before = highlighted.slice(0, position);
+      const content = highlighted.slice(position, position + word.length);
+      const after = highlighted.slice(position + word.length);
+
+      highlighted =
+        before +
+        `<span class="marker marker-${type}" data-type="${type}">${content}</span>` +
+        after;
+    }
+  }
+
+  return highlighted;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { text } = await req.json();
@@ -109,7 +134,7 @@ export async function POST(req: NextRequest) {
       .split(/[.!?]+/)
       .filter((s: string) => s.trim().length > 5);
 
-    // 1. LEXICAL: DistilBERT
+    // 1. LEXICAL: DistilBERT (gate for low vs medium/high)
     let polarityScore = 20;
     try {
       const { pipeline, env } = await import("@xenova/transformers");
@@ -128,16 +153,21 @@ export async function POST(req: NextRequest) {
       console.error("Sentiment failed:", e);
     }
 
-    if (polarityScore <= 40) {
+    // ✅ LEXICAL MARKER: below 50% → LOW risk, above 50% → MEDIUM/HIGH
+    const lexicalStrength = Math.round(polarityScore);
+    const isLowDepressivity = lexicalStrength <= 50;
+
+    if (isLowDepressivity) {
       return NextResponse.json({
         score: 0,
-        severity: "Low",
-        presentMarkers: [],
-        markerStrengths: { lexical: Math.round(polarityScore) },
+        risk: "Low",
+        depressivityPercent: lexicalStrength,
+        presentMarkers: ["lexical"],
+        markerStrengths: { lexical: lexicalStrength },
         criteria: {
-          lexical: { strength: Math.round(polarityScore), present: false },
+          lexical: { strength: lexicalStrength, present: true },
         },
-        evaluation: `✅ Low risk - Sentiment ${Math.round(polarityScore)}%`,
+        evaluation: `✅ Low risk – Sentiment ${lexicalStrength}%`,
         foundMarkers: [],
         textWithMarkers: text,
       });
@@ -209,21 +239,28 @@ export async function POST(req: NextRequest) {
         strength: semanticRatio,
       });
 
-    // Scoring
-    const score = Math.round(
-      polarityScore * 0.4 +
-        firstPersonRatio * 0.15 +
-        passiveRatio * 0.15 +
-        semanticRatio * 0.2 +
-        synt1Ratio * 0.05 +
-        ellipsisRatio * 0.05
-    );
-    const severity =
+    // ✅ DEPRESSIVITY: lex + other markers as average
+    const allStrengths: number[] = [
+      lexicalStrength,
+      morph1Present ? firstPersonRatio : 0,
+      morph2Present ? passiveRatio : 0,
+      semanticPresent ? semanticRatio : 0,
+      synt1Present ? synt1Ratio : 0,
+      synt2Present ? ellipsisRatio : 0,
+    ].filter(s => s > 0);
+    const depressivityPercent =
+      allStrengths.reduce((a, b) => a + b, 0) / Math.max(1, allStrengths.length);
+
+    const score = Math.round(depressivityPercent);
+    const risk: "Low" | "Medium" | "High" =
       score > 70 ? "High" : score > 45 ? "Medium" : "Low";
 
+    const highlightedText = highlightMarkers(text, foundMarkers);
+
     const result: AnalysisResult = {
-      score: Math.min(95, score),
-      severity,
+      score,
+      risk,
+      depressivityPercent: Math.round(depressivityPercent),
       presentMarkers: [
         "lexical",
         ...(morph1Present ? ["morphological1"] : []),
@@ -231,7 +268,7 @@ export async function POST(req: NextRequest) {
         ...(semanticPresent ? ["semantic"] : []),
       ],
       markerStrengths: {
-        lexical: Math.round(polarityScore),
+        lexical: lexicalStrength,
         morphological1: Math.round(firstPersonRatio),
         morphological2: Math.round(passiveRatio),
         semantic: Math.round(semanticRatio),
@@ -239,7 +276,7 @@ export async function POST(req: NextRequest) {
         syntactic2: Math.round(ellipsisRatio),
       },
       criteria: {
-        lexical: { strength: Math.round(polarityScore), present: true },
+        lexical: { strength: lexicalStrength, present: true },
         morphological1: {
           strength: Math.round(firstPersonRatio),
           present: morph1Present,
@@ -261,18 +298,20 @@ export async function POST(req: NextRequest) {
           present: synt2Present,
         },
       },
-      evaluation: `⚠️ ${severity} RISK (${Math.round(
-        polarityScore
-      )}% sentiment + ${foundMarkers.length} markers)`,
+      evaluation: `⚠️ ${
+        isLowDepressivity ? "Low" : risk
+      } risk – Depressivity: ${Math.round(
+        depressivityPercent
+      )}% (based on lexical + other markers)`,
       foundMarkers,
-      textWithMarkers: text,
+      textWithMarkers: highlightedText,
     };
 
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Analysis error:", error);
     return NextResponse.json(
-      { error: "Analysis failed", score: 0, severity: "Low" },
+      { error: "Analysis failed", score: 0, risk: "Low", depressivityPercent: 0 },
       { status: 500 }
     );
   }
