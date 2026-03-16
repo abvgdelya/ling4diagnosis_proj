@@ -6,7 +6,7 @@ export default function HomePage() {
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  
   const handleSubmit = async () => {
     setLoading(true);
     try {
