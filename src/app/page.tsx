@@ -26,7 +26,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const MIN_CHARS = 20;
-  const MAX_CHARS = 3500;
+  const MAX_CHARS = 500;
 
   const validateText = (inputText: string): string => {
     if (inputText.trim().length === 0) {
@@ -78,7 +78,8 @@ export default function HomePage() {
             Ling4Diagnosis
           </h1>
           <p className="text-lg text-gray-700 mt-2 font-medium max-w-2xl leading-relaxed">
-           You are a specialist working with people and mental health maintenance? Put the text in the text box to test it for signs of potential depressive indicators for further professional diagnosis.
+            Analyzes texts to detect depressivity markers and alerts professionals working with people 
+            to pay attention and complete further diagnosis of the text author's mental health.
           </p>
         </div>
       </header>
@@ -149,7 +150,7 @@ export default function HomePage() {
         {/* Results Section */}
         {result && !error && (
           <div className="space-y-8">
-            {/* Emotion Markers */}
+            {/* Enhanced Markers Section with Explanations */}
             {result.markerStrengths && Object.keys(result.markerStrengths).length > 0 && (
               <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/50 p-8 shadow-2xl">
                 <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-3">
@@ -158,9 +159,20 @@ export default function HomePage() {
                   </span>
                   Linguistic Markers Detected
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                {/* Marker Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   {Object.entries(result.markerStrengths).map(([marker, strength]: [string, number]) => {
                     const strengthPercent = Math.round(strength);
+                    const markerInfo = {
+                      lexical: "Negative sentiment detected (DistilBERT AI analysis)",
+                      morphological1: "Excessive first-person pronouns (I, me, my >50%)", 
+                      morphological2: "High passive voice usage (>30%)",
+                      semantic: "Mental/relational verbs dominate (>50%)",
+                      syntactic1: "Short sentences (11-12 words) vs long (>25%)",
+                      syntactic2: "Excessive ellipsis/pauses (≥25% sentences)"
+                    };
+                    const colorClass = marker.replace(/^\w/, c => c.toUpperCase());
                     return (
                       <div key={marker} className="group relative p-6 bg-gradient-to-br rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-default from-indigo-50 via-blue-50 to-purple-50 border border-white/50 hover:-translate-y-1">
                         <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
@@ -169,29 +181,51 @@ export default function HomePage() {
                           <div className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
                             {strengthPercent}%
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                            <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-1000"
-                                 style={{ width: `${strengthPercent}%` }}></div>
+                          <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner mb-4">
+                            <div className={`h-3 rounded-full transition-all duration-1000 ${colorClass === 'Lexical' ? 'bg-gradient-to-r from-red-500 to-pink-500' : 
+                              colorClass === 'Morphological1' ? 'bg-gradient-to-r from-orange-500 to-yellow-500' :
+                              colorClass === 'Morphological2' ? 'bg-gradient-to-r from-teal-500 to-cyan-500' :
+                              colorClass === 'Semantic' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' :
+                              'bg-gradient-to-r from-green-500 to-emerald-500'}`} style={{ width: `${strengthPercent}%` }}></div>
                           </div>
+                          <p className="text-sm text-gray-600 leading-relaxed">{markerInfo[marker as keyof typeof markerInfo]}</p>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Legend */}
+                <div className="bg-gradient-to-r from-slate-100 to-gray-100 p-6 rounded-2xl border border-gray-200">
+                  <h4 className="font-semibold text-gray-800 mb-4 text-lg">📋 Marker Legend</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"></span>Lexical (Sentiment)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full"></span>Morphological1 (Pronouns)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full"></span>Morphological2 (Passive)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></span>Semantic (Verbs)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></span>Syntactic1 (Length)</div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-green-500 rounded-full"></span>Syntactic2 (Pauses)</div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Marked Text */}
+            {/* FIXED Text with Color-Coded Markers */}
             {result.textWithMarkers && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200/50 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
-                <h3 className="text-2xl font-semibold text-amber-900 mb-6 flex items-center gap-3">
+              <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 border-2 border-yellow-400/30 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
+                <h3 className="text-2xl font-semibold text-amber-300 mb-6 flex items-center gap-3">
                   <span className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     📝
                   </span>
-                  Text with Markers
+                  Text with Color-Coded Markers
                 </h3>
-                <div className="prose prose-lg max-w-none bg-white/80 rounded-2xl p-8 shadow-inner border border-yellow-100/50 backdrop-blur-sm font-mono text-lg leading-relaxed"
-                     dangerouslySetInnerHTML={{__html: result.textWithMarkers}} />
+                <div className="bg-gradient-to-b from-slate-800 to-gray-800 rounded-2xl p-8 shadow-2xl border border-yellow-300/30 backdrop-blur-sm overflow-auto max-h-96">
+                  <div 
+                    className="prose prose-lg max-w-none text-slate-100 font-mono leading-relaxed text-xl"
+                    style={{ lineHeight: '1.8' }}
+                    dangerouslySetInnerHTML={{__html: result.textWithMarkers}} 
+                  />
+                </div>
               </div>
             )}
 
@@ -239,24 +273,42 @@ export default function HomePage() {
         * { font-family: 'Inter', sans-serif; }
         h1, h2, h3 { font-family: 'Playfair Display', serif; }
         
+        /* BASE MARKER */
         .marker {
-          background: linear-gradient(135deg, #ff6b6b, #ff8e8e) !important;
           color: white !important;
           padding: 6px 12px !important;
-          border-radius: 9999px !important;
+          border-radius: 12px !important;
           font-weight: 600 !important;
           font-size: 0.875rem !important;
-          box-shadow: 0 4px 12px rgba(255,107,107,0.4) !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
           display: inline-block !important;
           margin: 2px 4px !important;
           animation: pulse 2s infinite !important;
           border: 2px solid rgba(255,255,255,0.3) !important;
+          font-family: inherit !important;
         }
         
-        .marker-morphological1 { background: linear-gradient(135deg, #ff9f43, #ffbf69) !important; box-shadow: 0 4px 12px rgba(255,159,67,0.4) !important; }
-        .marker-morphological2 { background: linear-gradient(135deg, #4ecdc4, #6cdbd1) !important; box-shadow: 0 4px 12px rgba(78,205,196,0.4) !important; }
-        .marker-semantic { background: linear-gradient(135deg, #45b7d1, #5fcde1) !important; box-shadow: 0 4px 12px rgba(69,183,209,0.4) !important; }
-        .marker-syntactic1, .marker-syntactic2 { background: linear-gradient(135deg, #96ceb4, #b8e6c9) !important; box-shadow: 0 4px 12px rgba(150,206,180,0.4) !important; }
+        /* COLOR-CODED MARKERS */
+        .marker-lexical { 
+          background: linear-gradient(135deg, #ef4444, #f87171) !important;
+          box-shadow: 0 4px 12px rgba(239,68,68,0.5) !important;
+        }
+        .marker-morphological1 { 
+          background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+          box-shadow: 0 4px 12px rgba(245,158,11,0.5) !important;
+        }
+        .marker-morphological2 { 
+          background: linear-gradient(135deg, #10b981, #34d399) !important;
+          box-shadow: 0 4px 12px rgba(16,185,129,0.5) !important;
+        }
+        .marker-semantic { 
+          background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
+          box-shadow: 0 4px 12px rgba(59,130,246,0.5) !important;
+        }
+        .marker-syntactic1, .marker-syntactic2 { 
+          background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
+          box-shadow: 0 4px 12px rgba(139,92,246,0.5) !important;
+        }
         
         @keyframes pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
