@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
 
     // 🔥 CONTINUE ANALYSIS: All other markers (only if lexical >= 40%)
     const firstPersonCount = countWords(words, ["i", "me", "my", "myself"]);
-    const otherPronounCount = countWords(words, ["you", "he", "she", "it", "we", "they"]);
+    const otherPronounCount = countWords(words, ["you", "your", "yours", "yourself", "he", "his", "him", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "we", "our", "ours", "us", "ourselves", "they", "them", "their", "theirs", "themselves"]);
     const totalPronouns = firstPersonCount + otherPronounCount;
     const firstPersonRatio = totalPronouns > 0 ? (firstPersonCount / totalPronouns) * 100 : 0;
     const morph1Present = firstPersonRatio > 50;
