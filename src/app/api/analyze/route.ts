@@ -19,7 +19,7 @@ interface AnalysisResult {
   textWithMarkers: string;
 }
 
-// ✅ REAL Active/Passive Detection
+// ✅ REAL Active/Passive Detection (fixed regex)
 const analyzeActivePassive = (text: string) => {
   const sentences = text
     .split(/[.!?]+/)
@@ -30,12 +30,12 @@ const analyzeActivePassive = (text: string) => {
   sentences.forEach((sentence: string) => {
     const lowerSentence = sentence.toLowerCase();
     const passivePatterns = [
-      /((?:is|was|were|be|been|being|am|are|get|got|gotten)\\s+[a-z]+ed(?:\\b|$))/gi,
-      /((?:is|was|were|be|been|being|am|are|get|got|gotten)\\s+[a-z]+en(?:\\b|$))/gi,
-      /(?:by\\s+the|by\\s+a|by\\s+an)/gi,
+      /((?:is|was|were|be|been|being|am|are|get|got|gotten)\s+[a-z]+ed(?:\b|$))/gi,
+      /((?:is|was|were|be|been|being|am|are|get|got|gotten)\s+[a-z]+en(?:\b|$))/gi,
+      /(?:by\s+the|by\s+a|by\s+an)/gi,
     ];
     const activePatterns = [
-      /(?:i|you|he|she|it|we|they)\\s+(?:do|does|did|go|went|run|runs|make|makes|take|takes)/gi,
+      /(?:i|you|he|she|it|we|they)\s+(?:do|does|did|go|went|run|runs|make|makes|take|takes)/gi,
     ];
 
     passivePatterns.forEach((pattern) => {
@@ -49,12 +49,11 @@ const analyzeActivePassive = (text: string) => {
   });
 
   const totalVerbs = passiveCount + activeCount;
-  const passiveRatio =
-    totalVerbs > 0 ? (passiveCount / totalVerbs) * 100 : 0;
+  const passiveRatio = totalVerbs > 0 ? (passiveCount / totalVerbs) * 100 : 0;
   return { passiveCount, activeCount, passiveRatio };
 };
 
-// 🔥 EXPANDED Halliday's Process Types Semantic Analysis
+// 🔥 EXPANDED Halliday's Process Types Semantic Analysis (fixed regex)
 const analyzeSemanticMarkers = (text: string) => {
   const sentences = text
     .split(/[.!?]+/)
@@ -136,7 +135,7 @@ const analyzeSemanticMarkers = (text: string) => {
   return { semanticRatio, classifiedVerbs };
 };
 
-// 🔥 POSITION-BASED LINGUISTIC ELLIPSIS
+// 🔥 POSITION-BASED LINGUISTIC ELLIPSIS (fixed regex)
 function analyzeEllipsis(text: string): { ellipsisRatio: number } {
   const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 5);
   let ellipsisCount = 0;
@@ -188,8 +187,8 @@ export async function POST(req: NextRequest) {
     const words = text.toLowerCase().split(/\W+/).filter(Boolean);
     const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 5);
 
-    // 1. LEXICAL: DistilBERT sentiment
-    let polarityScore = 20;
+    // 🔥 NEW 1. LEXICAL: DistilBERT sentiment (40% threshold)
+    let polarityScore = 0;
     try {
       const { pipeline, env } = await import("@xenova/transformers");
       env.allowLocalModels = false;
@@ -202,33 +201,42 @@ export async function POST(req: NextRequest) {
     }
 
     const lexicalStrength = Math.round(polarityScore);
-    const isLowDepressivity = lexicalStrength <= 50;
-
-    if (isLowDepressivity) {
+    
+    // 🔥 NEW GATE: 40% negativity threshold
+    if (lexicalStrength < 40) {
       return NextResponse.json({
-        score: 0, risk: "Low", depressivityPercent: lexicalStrength,
-        presentMarkers: ["lexical"], markerStrengths: { lexical: lexicalStrength },
-        criteria: { lexical: { strength: lexicalStrength, present: true } },
-        evaluation: `✅ Low risk – Sentiment ${lexicalStrength}%`, foundMarkers: [], textWithMarkers: text,
+        score: 0,
+        risk: "Low",
+        depressivityPercent: lexicalStrength,
+        presentMarkers: ["lexical"],
+        markerStrengths: { lexical: lexicalStrength },
+        criteria: { 
+          lexical: { strength: lexicalStrength, present: true },
+          morphological1: { strength: 0, present: false },
+          morphological2: { strength: 0, present: false },
+          semantic: { strength: 0, present: false },
+          syntactic1: { strength: 0, present: false },
+          syntactic2: { strength: 0, present: false }
+        },
+        evaluation: `✅ Low risk – Negativity ${lexicalStrength}% (below 40% threshold)`,
+        foundMarkers: [],
+        textWithMarkers: text,
       });
     }
 
-    // 2. Morphological 1: First-person pronouns
+    // 🔥 CONTINUE ANALYSIS: All other markers (only if lexical >= 40%)
     const firstPersonCount = countWords(words, ["i", "me", "my", "myself"]);
     const otherPronounCount = countWords(words, ["you", "he", "she", "it", "we", "they"]);
     const totalPronouns = firstPersonCount + otherPronounCount;
     const firstPersonRatio = totalPronouns > 0 ? (firstPersonCount / totalPronouns) * 100 : 0;
     const morph1Present = firstPersonRatio > 50;
 
-    // 3. Morphological 2: Active/Passive
     const { passiveRatio } = analyzeActivePassive(text);
     const morph2Present = passiveRatio > 30;
 
-    // 4. Semantic: MENTAL+RELATIONAL >50%
     const { semanticRatio } = analyzeSemanticMarkers(text);
     const semanticPresent = semanticRatio > 50;
 
-    // 5. Syntactic 1: Short sentence ratio
     const shortSentences = sentences.filter((s: string) => {
       const wc = s.split(/\W+/).filter(Boolean).length;
       return wc >= 11 && wc <= 12;
@@ -237,34 +245,42 @@ export async function POST(req: NextRequest) {
     const synt1Ratio = longSentences.length > 0 ? (shortSentences.length / longSentences.length) * 100 : 0;
     const synt1Present = synt1Ratio > 25;
 
-    // 6. Syntactic 2: POSITION-BASED ELLIPSIS
     const { ellipsisRatio } = analyzeEllipsis(text);
     const synt2Present = ellipsisRatio >= 25;
 
-    // Found markers (only the ones that trigger)
-    const foundMarkers: FoundMarker[] = [];
-    if (morph1Present) foundMarkers.push({ word: "I/me", position: 0, type: "morphological1", strength: firstPersonRatio });
-    if (morph2Present) foundMarkers.push({ word: `passive:${Math.round(passiveRatio)}%`, position: 0, type: "morphological2", strength: passiveRatio });
-    if (semanticPresent) foundMarkers.push({ word: `mental:${Math.round(semanticRatio)}%`, position: 0, type: "semantic", strength: semanticRatio });
-
-    // Calculate overall score
+    // 🔥 NEW SCORING: Average of lexical + present markers only
     const allStrengths: number[] = [
-      lexicalStrength,
+      lexicalStrength, // Always included (>=40%)
       morph1Present ? firstPersonRatio : 0,
       morph2Present ? passiveRatio : 0,
       semanticPresent ? semanticRatio : 0,
       synt1Present ? synt1Ratio : 0,
       synt2Present ? ellipsisRatio : 0,
     ].filter(s => s > 0);
+
     const depressivityPercent = allStrengths.reduce((a, b) => a + b, 0) / Math.max(1, allStrengths.length);
     const score = Math.round(depressivityPercent);
-    const risk: "Low" | "Medium" | "High" = score > 70 ? "High" : score > 45 ? "Medium" : "Low";
+    
+    // 🔥 NEW CLASSIFICATION: 0-39% Low, 40-79% Medium, 80-100% High
+    const risk: "Low" | "Medium" | "High" = score >= 80 ? "High" : score >= 40 ? "Medium" : "Low";
+
+    const foundMarkers: FoundMarker[] = [];
+    if (morph1Present) foundMarkers.push({ word: "I/me", position: 0, type: "morphological1", strength: firstPersonRatio });
+    if (morph2Present) foundMarkers.push({ word: `passive:${Math.round(passiveRatio)}%`, position: 0, type: "morphological2", strength: passiveRatio });
+    if (semanticPresent) foundMarkers.push({ word: `mental:${Math.round(semanticRatio)}%`, position: 0, type: "semantic", strength: semanticRatio });
 
     const highlightedText = highlightMarkers(text, foundMarkers);
 
     const result: AnalysisResult = {
-      score, risk, depressivityPercent: Math.round(depressivityPercent),
-      presentMarkers: ["lexical", ...(morph1Present ? ["morphological1"] : []), ...(morph2Present ? ["morphological2"] : []), ...(semanticPresent ? ["semantic"] : [])],
+      score,
+      risk,
+      depressivityPercent: Math.round(depressivityPercent),
+      presentMarkers: [
+        "lexical", 
+        ...(morph1Present ? ["morphological1"] : []),
+        ...(morph2Present ? ["morphological2"] : []),
+        ...(semanticPresent ? ["semantic"] : [])
+      ],
       markerStrengths: {
         lexical: lexicalStrength,
         morphological1: Math.round(firstPersonRatio),
@@ -281,14 +297,18 @@ export async function POST(req: NextRequest) {
         syntactic1: { strength: Math.round(synt1Ratio), present: synt1Present },
         syntactic2: { strength: Math.round(ellipsisRatio), present: synt2Present },
       },
-      evaluation: `⚠️ ${isLowDepressivity ? "Low" : risk} risk – Depressivity: ${Math.round(depressivityPercent)}% (lexical + Halliday + ellipsis)`,
-      foundMarkers, textWithMarkers: highlightedText,
+      evaluation: `⚠️ ${risk} risk – Depressivity: ${Math.round(depressivityPercent)}% (Negativity ${lexicalStrength}% + ${allStrengths.length - 1} markers)`,
+      foundMarkers,
+      textWithMarkers: highlightedText,
     };
 
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Analysis error:", error);
-    return NextResponse.json({ error: "Analysis failed", score: 0, risk: "Low", depressivityPercent: 0 }, { status: 500 });
+    return NextResponse.json(
+      { error: "Analysis failed", score: 0, risk: "Low", depressivityPercent: 0 },
+      { status: 500 }
+    );
   }
 }
 
