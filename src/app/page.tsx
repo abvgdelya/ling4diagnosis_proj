@@ -25,7 +25,7 @@ export default function HomePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const MIN_CHARS = 20;
+  const MIN_CHARS = 50;
   const MAX_CHARS = 3500;
 
   const validateText = (inputText: string): string => {
